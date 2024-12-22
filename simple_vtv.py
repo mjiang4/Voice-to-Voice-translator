@@ -1,10 +1,15 @@
 import gradio as gr
 import assemblyai as aai
-from translate import Translator
+from deep_translator import GoogleTranslator
 from elevenlabs import VoiceSettings
 from elevenlabs.client import ElevenLabs
 import uuid
 from pathlib import Path
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 def voice_to_voice(audio_file):
     
@@ -16,22 +21,22 @@ def voice_to_voice(audio_file):
     else:
         text = transcription_response.text
 
-    es_translation, tr_translation, ja_translation = text_translation(text)
+    es_translation, de_translation, zh_translation = text_translation(text)
 
-    es_audi_path = text_to_speech(es_translation)
-    tr_audi_path = text_to_speech(tr_translation)
-    ja_audi_path = text_to_speech(ja_translation)
+    es_audio_path = text_to_speech(es_translation)
+    de_audio_path = text_to_speech(de_translation)
+    zh_audio_path = text_to_speech(zh_translation)
 
-    es_path = Path(es_audi_path)
-    tr_path = Path(tr_audi_path)
-    ja_path = Path(ja_audi_path)
+    es_path = Path(es_audio_path)
+    de_path = Path(de_audio_path)
+    zh_path = Path(zh_audio_path)
 
-    return es_path, tr_path, ja_path
+    return es_path, de_path, zh_path
 
 
 def audio_transcription(audio_file):
 
-    aai.settings.api_key = "<your-assemblyai-api-key>"
+    aai.settings.api_key = os.getenv('ASSEMBLYAI_API_KEY')
 
     transcriber = aai.Transcriber()
     transcription = transcriber.transcribe(audio_file)
@@ -39,27 +44,23 @@ def audio_transcription(audio_file):
     return transcription
 
 def text_translation(text):
+    translator = GoogleTranslator()
     
-    translator_es = Translator(from_lang="en", to_lang="es")
-    es_text = translator_es.translate(text)
-
-    translator_tr = Translator(from_lang="en", to_lang="tr")
-    tr_text = translator_tr.translate(text)
-
-    translator_ja = Translator(from_lang="en", to_lang="ja")
-    ja_text = translator_ja.translate(text)
-
-    return es_text, tr_text, ja_text
+    es_text = GoogleTranslator(source='en', target='es').translate(text)
+    de_text = GoogleTranslator(source='en', target='de').translate(text)
+    zh_text = GoogleTranslator(source='en', target='zh-CN').translate(text)
+    
+    return es_text, de_text, zh_text
 
 def text_to_speech(text):
 
     client = ElevenLabs(
-        api_key= "<your-elevenlabs-api-key>",
+        api_key=os.getenv('ELEVENLABS_API_KEY'),
     )
 
     # Calling the text_to_speech conversion API with detailed parameters
     response = client.text_to_speech.convert(
-        voice_id="<your-voice-id>", #clone your voice on elevenlabs dashboard and copy the id
+        voice_id=os.getenv('ELEVENLABS_VOICE_ID'),
         optimize_streaming_latency="0",
         output_format="mp3_22050_32",
         text=text,
@@ -94,7 +95,7 @@ audio_input = gr.Audio(
 demo = gr.Interface(
     fn=voice_to_voice,
     inputs=audio_input,
-    outputs=[gr.Audio(label="Spanish"), gr.Audio(label="Turkish"), gr.Audio(label="Japanese")]
+    outputs=[gr.Audio(label="Spanish"), gr.Audio(label="German"), gr.Audio(label="Mandarin")]
 )
 
 if __name__ == "__main__":
