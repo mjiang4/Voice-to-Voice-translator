@@ -14,7 +14,7 @@ load_dotenv()
 def voice_to_voice(audio_file):
     """
     Main function that handles the complete voice-to-voice translation pipeline.
-    Takes an audio file and returns three translated audio files in Spanish, German, and Mandarin.
+    Takes an audio file and returns four translated audio files in Spanish, German, Mandarin, and Greek.
     """
     
     # Step 1: Convert input audio to text using AssemblyAI
@@ -27,19 +27,21 @@ def voice_to_voice(audio_file):
         text = transcription_response.text
 
     # Step 2: Translate the transcribed text to multiple languages
-    es_translation, de_translation, zh_translation = text_translation(text)
+    es_translation, de_translation, zh_translation, el_translation = text_translation(text)
 
     # Step 3: Convert translated text back to speech using ElevenLabs
     es_audio_path = text_to_speech(es_translation)
     de_audio_path = text_to_speech(de_translation)
     zh_audio_path = text_to_speech(zh_translation)
+    el_audio_path = text_to_speech(el_translation)  # Greek audio
 
     # Convert file paths to Path objects for Gradio
     es_path = Path(es_audio_path)
     de_path = Path(de_audio_path)
     zh_path = Path(zh_audio_path)
+    el_path = Path(el_audio_path)
 
-    return es_path, de_path, zh_path
+    return es_path, de_path, zh_path, el_path
 
 
 def audio_transcription(audio_file):
@@ -56,16 +58,15 @@ def audio_transcription(audio_file):
 
 def text_translation(text):
     """
-    Translates input text to Spanish, German, and Mandarin using Google Translate.
+    Translates input text to Spanish, German, Mandarin, and Greek using Google Translate.
     Returns tuple of translated texts.
     """
-    translator = GoogleTranslator()  # Note: This line appears unused
-    
     es_text = GoogleTranslator(source='en', target='es').translate(text)
     de_text = GoogleTranslator(source='en', target='de').translate(text)
     zh_text = GoogleTranslator(source='en', target='zh-CN').translate(text)
+    el_text = GoogleTranslator(source='en', target='el').translate(text)  # Greek translation
     
-    return es_text, de_text, zh_text
+    return es_text, de_text, zh_text, el_text
 
 def text_to_speech(text):
     """
@@ -114,7 +115,12 @@ audio_input = gr.Audio(
 demo = gr.Interface(
     fn=voice_to_voice,
     inputs=audio_input,
-    outputs=[gr.Audio(label="Spanish"), gr.Audio(label="German"), gr.Audio(label="Mandarin")]
+    outputs=[
+        gr.Audio(label="Spanish"), 
+        gr.Audio(label="German"), 
+        gr.Audio(label="Mandarin"),
+        gr.Audio(label="Greek")  # Add Greek output
+    ]
 )
 
 if __name__ == "__main__":
